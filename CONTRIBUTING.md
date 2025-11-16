@@ -56,7 +56,7 @@ This project follows a code of conduct to ensure a welcoming and inclusive envir
 3. **Install development dependencies**
    ```bash
    pip install -r requirements.txt
-   pip install -e ".[dev]"
+   pip install -r requirements-dev.txt
    ```
 
 4. **Create a feature branch**
@@ -142,18 +142,24 @@ def calc_sim(img1,img2):
 
 ### Code Formatting
 
-Use automated tools:
+**Use our automated script for all quality checks:**
 
 ```bash
-# Format code with black
-black src/ tests/ examples/
+# Run full quality check (recommended before each commit)
+./scripts/format_and_lint.sh
 
-# Check style with flake8
-flake8 src/ tests/ examples/
+# Quick check for syntax and formatting
+./scripts/format_and_lint.sh quick
 
-# Type checking with mypy
-mypy src/
+# Individual tools (if needed)
+ruff check --fix .              # Fix syntax errors
+black .                        # Format code
+isort --profile black .        # Sort imports
+mypy .                         # Type checking
+pylint src/                    # Deep linting
 ```
+
+**For detailed setup and configuration, see our [Development Guide](docs/DEVELOPMENT_GUIDE.md).**
 
 ### Documentation
 
@@ -255,10 +261,13 @@ Aim for:
    pytest tests/
    ```
 
-3. **Check code style**
+3. **Check code quality**
    ```bash
-   black src/ tests/ examples/
-   flake8 src/ tests/ examples/
+   # Use our comprehensive quality check script
+   ./scripts/format_and_lint.sh
+   
+   # Or quick check
+   ./scripts/format_and_lint.sh quick
    ```
 
 4. **Update documentation**
