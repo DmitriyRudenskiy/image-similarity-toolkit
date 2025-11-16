@@ -799,6 +799,245 @@ autocmd QuickFixCmdPost [^l]* nested cwindow
 
 ---
 
+## ChromaDB Testing and Development
+
+### Installing ChromaDB Dependencies
+
+For testing and development with the ChromaDB backend:
+
+```bash
+# Install ChromaDB dependencies
+pip install chromadb sentence-transformers
+
+# Or install from requirements
+pip install -r requirements.txt  # Includes ChromaDB dependencies
+```
+
+### Running ChromaDB Tests
+
+#### Basic ChromaDB Tests
+
+```bash
+# Run ChromaDB backend tests
+pytest tests/test_chromadb_backend.py -v
+
+# Run with coverage
+pytest tests/test_chromadb_backend.py --cov=src/image_similarity/chromadb_backend --cov-report=term-missing
+
+# Run specific test class
+pytest tests/test_chromadb_backend.py::TestChromaDBBackend::test_basic_operations -v
+
+# Run integration tests only
+pytest tests/test_chromadb_backend.py -m integration -v
+```
+
+#### Test Configuration
+
+ChromaDB tests are configured with specific markers:
+
+```python
+# In test files
+@pytest.mark.integration
+class TestChromaDBIntegration:
+    """Integration tests requiring ChromaDB dependencies."""
+    pass
+
+@pytest.mark.slow
+def test_large_dataset_performance():
+    """Test performance with large datasets."""
+    pass
+```
+
+#### ChromaDB Example Testing
+
+```bash
+# Run the ChromaDB example
+python examples/chromadb_example.py
+
+# Run with custom parameters
+python examples/chromadb_example.py --test-mode
+
+# Interactive testing in IPython
+python -c "from examples.chromadb_example import *; demo_basic_operations()"
+```
+
+### Docker Development with ChromaDB
+
+#### Building ChromaDB Development Image
+
+```bash
+# Build development image
+docker build -f Dockerfile.chromadb -t image-similarity-dev .
+
+# Run with volume mounts for development
+docker run -it --rm \
+  -v $(pwd):/app \
+  -v $(pwd)/chroma_db:/app/chroma_db \
+  image-similarity-dev
+```
+
+#### Docker Compose for Development
+
+```bash
+# Start ChromaDB development environment
+docker-compose -f docker-compose.chromadb.yml up -d
+
+# Run tests in container
+docker-compose -f docker-compose.chromadb.yml exec image-similarity-chromadb \
+  python -m pytest tests/test_chromadb_backend.py -v
+
+# Interactive shell for debugging
+docker-compose -f docker-compose.chromadb.yml exec image-similarity-chromadb bash
+```
+
+### Performance Testing
+
+#### Benchmarking ChromaDB vs SQLite
+
+```python
+# Test script for performance comparison
+import time
+import tempfile
+from pathlib import Path
+
+def benchmark_backends():
+    """Compare performance of SQLite vs ChromaDB backends."""
+    
+    # Create test dataset
+    test_images = create_test_images(100)
+    
+    # Test SQLite
+    from image_similarity.database import EmbeddingDatabase
+    sqlite_db = EmbeddingDatabase(':memory:')
+    
+    start_time = time.time()
+    for img_path in test_images:
+        # Add images (implementation depends on your test setup)
+        pass
+    sqlite_time = time.time() - start_time
+    
+    # Test ChromaDB
+    from image_similarity.chromadb_backend import ChromaDBBackend
+    chroma_backend = ChromaDBBackend(persist_directory=str(tempfile.mkdtemp()))
+    
+    start_time = time.time()
+    count = chroma_backend.add_images_from_directory(test_dir)
+    chroma_time = time.time() - start_time
+    
+    print(f"SQLite: {sqlite_time:.2f}s")
+    print(f"ChromaDB: {chroma_time:.2f}s")
+    print(f"Speedup: {sqlite_time/chroma_time:.2f}x")
+```
+
+#### Memory Usage Testing
+
+```bash
+# Monitor memory usage during tests
+memory_profiler python -m pytest tests/test_chromadb_backend.py -v
+
+# Test with large datasets
+python -c "
+from image_similarity.chromadb_backend import ChromaDBBackend
+import psutil
+import os
+
+process = psutil.Process(os.getpid())
+initial_memory = process.memory_info().rss / 1024 / 1024  # MB
+
+# Large dataset test
+backend = ChromaDBBackend(persist_directory='./large_test_db')
+backend.add_images_from_directory('./large_dataset', max_images=1000)
+
+final_memory = process.memory_info().rss / 1024 / 1024  # MB
+print(f'Memory usage: {final_memory - initial_memory:.2f} MB')
+"
+```
+
+### Continuous Integration
+
+#### GitHub Actions for ChromaDB
+
+Add to your `.github/workflows/test.yml`:
+
+```yaml
+name: Test with ChromaDB
+
+on: [push, pull_request]
+
+jobs:
+  test-chromadb:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+    
+    - name: Run ChromaDB tests
+      run: |
+        pytest tests/test_chromadb_backend.py -v --cov=src/image_similarity/chromadb_backend
+    
+    - name: Run ChromaDB example
+      run: |
+        python examples/chromadb_example.py
+```
+
+### Troubleshooting ChromaDB Development
+
+#### Common Development Issues
+
+1. **Import Errors**
+   ```bash
+   # Ensure ChromaDB is properly installed
+   pip list | grep chromadb
+   
+   # Reinstall if needed
+   pip uninstall chromadb
+   pip install chromadb
+   ```
+
+2. **Model Download Issues**
+   ```bash
+   # Test model loading
+   python -c "
+   from sentence_transformers import SentenceTransformer
+   model = SentenceTransformer('all-MiniLM-L6-v2')
+   print('Model loaded successfully')
+   "
+   ```
+
+3. **Database Persistence Issues**
+   ```python
+   # Check permissions and paths
+   import os
+   print(f"Current directory: {os.getcwd()}")
+   print(f"Directory exists: {os.path.exists('./test_db')}")
+   ```
+
+4. **Memory Issues with Large Datasets**
+   ```python
+   # Use batch processing for large datasets
+   backend = ChromaDBBackend(persist_directory="./large_db")
+   
+   # Process in smaller batches
+   for batch_start in range(0, total_images, batch_size):
+       batch_end = min(batch_start + batch_size, total_images)
+       backend.add_images_from_directory(
+           image_directory,
+           max_images=batch_size
+       )
+   ```
+
+---
+
 ## Troubleshooting
 
 ### Common Issues and Solutions

@@ -1,0 +1,93 @@
+# Docker Compose for ChromaDB Backend
+# Provides easy setup for ChromaDB-based image similarity toolkit
+
+version: '3.8'
+
+services:
+  # Main application with ChromaDB backend
+  image-similarity-chromadb:
+    build:
+      context: .
+      dockerfile: Dockerfile.chromadb
+    container_name: image-similarity-chromadb
+    volumes:
+      # Mount source code for development
+      - ./src:/app/src
+      - ./examples:/app/examples
+      - ./data:/app/data
+      
+      # Persist ChromaDB data
+      - ./chroma_db_data:/app/chroma_db
+      - ./demo_chroma_db:/app/demo_chroma_db
+      - ./advanced_chroma_db:/app/advanced_chroma_db
+      - ./perf_test_db:/app/perf_test_db
+      
+      # Persist demo images
+      - ./demo_images:/app/demo_images
+      - ./advanced_demo_images:/app/advanced_demo_images
+      - ./perf_test_images:/app/perf_test_images
+    
+    environment:
+      - PYTHONPATH=/app/src
+      - CHROMA_PERSIST_DIRECTORY=/app/chroma_db
+    
+    # Run in interactive mode for demos
+    stdin_open: true
+    tty: true
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+    
+    networks:
+      - image-similarity-net
+
+  # Alternative: ChromaDB server mode (for distributed setups)
+  # Note: ChromaDB primarily runs embedded, but this provides server mode
+  chromadb-server:
+    image: chromadb/chroma:latest
+    container_name: chromadb-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_server_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+    restart: unless-stopped
+    networks:
+      - image-similarity-net
+
+volumes:
+  chroma_db_data:
+    driver: local
+  chroma_server_data:
+    driver: local
+
+networks:
+  image-similarity-net:
+    driver: bridge
+
+# Usage instructions:
+# 
+# 1. Build and run the main application:
+#    docker-compose up image-similarity-chromadb
+#
+# 2. Run in detached mode:
+#    docker-compose up -d image-similarity-chromadb
+#
+# 3. Access interactive shell:
+#    docker-compose exec image-similarity-chromadb bash
+#
+# 4. Run specific examples:
+#    docker-compose exec image-similarity-chromadb python examples/chromadb_example.py
+#
+# 5. Start ChromaDB server (for remote clients):
+#    docker-compose up chromadb-server
+#
+# 6. Clean up:
+#    docker-compose down
+#    docker-compose down -v  # Remove volumes too

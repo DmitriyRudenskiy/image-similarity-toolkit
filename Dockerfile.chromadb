@@ -1,0 +1,48 @@
+# ChromaDB Backend Dockerfile for Image Similarity Toolkit
+# Provides containerized environment with ChromaDB integration
+
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ENV PYTHONPATH=/app/src
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+COPY requirements-dev.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code
+COPY . .
+
+# Install the package in development mode
+RUN pip install -e .
+
+# Create necessary directories
+RUN mkdir -p /app/data/input /app/data/output /app/chroma_db
+
+# Expose port for future web interface (if needed)
+EXPOSE 8000
+
+# Create health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import chromadb; print('ChromaDB ready')" || exit 1
+
+# Default command - run the ChromaDB example
+CMD ["python", "examples/chromadb_example.py"]
+
+# Alternative commands for different use cases:
+# CMD ["python", "-c", "from image_similarity.chromadb_backend import ChromaDBBackend; print('ChromaDB backend ready')"]
+# CMD ["python", "-m", "pytest", "tests/test_chromadb_backend.py"]

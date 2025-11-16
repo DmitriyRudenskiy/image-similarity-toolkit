@@ -18,6 +18,10 @@ pytest-cov>=4.0.0         # Coverage plugin for pytest
 pytest-mock>=3.10.0       # Mock plugin for pytest
 pytest-xdist>=3.0.0       # Parallel test execution
 
+# Vector Database Testing (optional)
+chromadb>=0.4.0           # ChromaDB for vector database testing
+sentence-transformers>=2.2.0  # Embedding models for testing
+
 # Build and packaging
 build>=0.10.0             # Build package
 twine>=4.0.0              # Upload package to PyPI

@@ -11,7 +11,11 @@ scikit-learn>=1.0.0
 matplotlib>=3.5.0
 seaborn>=0.12.0
 
-# Optional: CLIP model
+# Vector Database Backend (ChromaDB)
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+
+# Optional: CLIP model for advanced image-text embeddings
 # Install with: pip install git+https://github.com/openai/CLIP.git
 # clip @ git+https://github.com/openai/CLIP.git
 
